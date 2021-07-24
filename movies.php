@@ -1,25 +1,45 @@
 <?php
 const DEFAULT_LIMIT = 10;
 
-// $page = isset($_POST['page']) ? (is_numeric($_POST['page']) ? $_POST['page'] : 1) : 1;
-// $limit = isset($_POST['limit']) ? (is_numeric($_POST['limit']) ? $_POST['limit'] : DEFAULT_LIMIT) : DEFAULT_LIMIT;
-// $sortBy = isset($_POST['sortBy']) ? $_POST['sortBY'] : 'release_date';
-// $filters = isset($_POST['filters']) ? $_POST['filters'] : null;
+//REVIEWER NOTE:
+//these below lists would obiviously come from a db or other states in a real app.
+//just hardconding them for simplycity
+$genres = ['Action', 'Adventure', 'Drama', 'Romance', 'Suspense', 'Horror'];
+$languages = ['English', 'Hindi', 'Marthi'];
 
+
+//REVIEWER NOTE: Am aware that exposing field values like this is a very bad idea.
+$sorting_fields = ['release_date' => 'Release Date', 'duration_minutes' => 'Playtime'];
+
+
+//Grab filter and sort values
+$page = isset($_GET['page']) ? (is_numeric($_GET['page']) ? $_GET['page'] : 1) : 1;
+$limit = isset($_GET['limit']) ? (is_numeric($_GET['limit']) ? $_GET['limit'] : DEFAULT_LIMIT) : DEFAULT_LIMIT;
+
+$sort_by = isset($_GET['sort_field']) ? $_GET['sort_field'] : 'release_date';
+$sort_order = isset($_GET['sort_order']) ? $_GET['sort_order'] : 'highest';
+$genre = isset($_GET['genre']) ? $_GET['genre'] : null;
+$lang = isset($_GET['lang']) ? $_GET['lang'] : null;
 
 
 $movies_model = new MoviesModel();
-//setup filtering
 
+//setup filtering
+if ($lang) $movies_model->filterByLanguage($lang);
+if ($genre) $movies_model->filterByGenre($genre);
 
 //setup sorting
+$movies_model->sortBy($sort_by, ($sort_order === "lowest" ? true : false));
 
 
 //setup limits
+$movies_model->paginate($page, $limit);
 
-
-
+//execute sql
 $movies = $movies_model->getMoviesWithCategories();
+
+
+
 ?>
 <!doctype html>
 <html lang="en">
@@ -35,28 +55,26 @@ $movies = $movies_model->getMoviesWithCategories();
     <title>Hello, world!</title>
 </head>
 
-<body>
-    <div class="container" style="max-width: 600px;">
+<body style="background-color: aliceblue;">
+    <div class="container mt-5" style="max-width: 600px;">
 
         <div id="filter-box">
-            <form>
+            <form action='index.php'>
                 <div class="d-flex mb-2">
 
                     <div class="input-group mx-2">
-                        <label class="input-group-text" for="inputGroupSelect01">Genre</label>
-                        <select class="form-select" id="inputGroupSelect01">
-                            <option selected>All</option>
-                            <option value="action">Action</option>
-                            <option value="drama">Drama</option>
+                        <label class="input-group-text" for="select-genre">Genre</label>
+                        <select class="form-select" id="select-genre" name="genre">
+                            <option value="" <?= (!$genre ? "selected" : "") ?>>All</option>
+                            <?php foreach ($genres as $item) echo "<option value='$item'" . ($item == $genre ? "selected" : "") . ">$item</option>" ?>
                         </select>
                     </div>
 
                     <div class="input-group mx-2">
-                        <label class="input-group-text" for="inputGroupSelect01">Language</label>
-                        <select class="form-select" id="inputGroupSelect01">
-                            <option selected>All</option>
-                            <option value="action">English</option>
-                            <option value="drama">Hindi</option>
+                        <label class="input-group-text" for="select-language">Language</label>
+                        <select class="form-select" id="select-language" name="lang">
+                            <option value="" <?= (!$lang ? "selected" : "") ?>>All</option>
+                            <?php foreach ($languages as $item) echo "<option value='$item'" . ($item == $lang ? "selected" : "") . ">$item</option>" ?>
                         </select>
                     </div>
 
@@ -64,36 +82,53 @@ $movies = $movies_model->getMoviesWithCategories();
                 </div>
                 <div class="d-flex">
                     <div class="input-group mx-2">
-                        <label class="input-group-text" for="inputGroupSelect01">SORT BY</label>
-                        <select class="form-select" id="inputGroupSelect01">
-                            <option value="action">Release Date</option>
-                            <option value="drama">Playtime</option>
+                        <label class="input-group-text" for="sort-by">Sort by</label>
+                        <select class="form-select" id="sort-by" name="sort_field">
+                            <?php foreach ($sorting_fields as $key => $item) echo "<option value='$key'" . ($key == $sort_by ? "selected" : "") . ">$item</option>" ?>
                         </select>
-                        <select class="form-select" id="inputGroupSelect01">
-                            <option value="action">Highest</option>
-                            <option value="drama">Lowest</option>
+                        <select class="form-select" id="sort-order" name="sort_order">
+
+                            <option value="highest" <?= ($sort_order === "highest" ? "selected" : "") ?>>Highest First</option>
+                            <option value="lowest" <?= ($sort_order === "lowest" ? "selected" : "") ?>>Lowest First</option>
                         </select>
                     </div>
 
 
-                    <button type="submit" id="search" class="btn btn-primary btn-sm">Search</button>
+                    <button type="submit" id="search" value="submit" class="btn btn-primary btn-sm">Search</button>
                 </div>
             </form>
         </div>
-        <div id="movie_results">
-            <div class="card movie_card">
-                <div class="card-body d-flex">
-                    <img class="poster" style="width: 200px; height: 300px" src="" />
-                    <div class="details mx-2">
-                        <h4 class="title">This is a movie title</h4>
-                        <p class="description">This is a long yet short movie description which I am writing to preview how long text would fit into this container along with the image and blah blah blah.</p>
-                        <p class="genre">Sci-Fi, Action</p>
-                        <p class="language"> English</p>
-                        <p class="release_date"> 24 July 2021 </p>
+        <br>
+        <div id="movie_results mt-3">
+
+            <?php
+            if ($movies) {
+                foreach ($movies as $movie) {
+            ?>
+                    <div class="card movie_card mb-3">
+                        <div class="card-body d-flex">
+                            <img class="poster" style="width: 200px; height: 300px" src="<?= $movie['featured_image'] ?>" />
+                            <div class="details mx-2">
+                                <h4 class="title p-0 m-0"><?= $movie['title'] ?> </h4>
+                                <small>
+                                    <span class="language">
+                                        <b>Language:</b> <?= $movie['lang'] ?></span> <br />
+                                    <b>Playtime:</b> <?= $movie['duration_minutes'] ?> Minutes <br />
+                                    <b>Genre:</b> <span class="genre"><?= $movie['genre'] ?></span>
+                                </small>
+                                <p class="description mt-2"><?= $movie['description'] ?></p>
+
+
+                                <small class="release_date"> <b>Released:</b> <?= $movie['release_date'] ?> </small>
+                            </div>
+
+                        </div>
                     </div>
 
-                </div>
-            </div>
+            <?php }
+            } else {
+                echo "<p class='text-center'> No match found.</p>";
+            } ?>
         </div>
         <div id="pagination"></div>
 
