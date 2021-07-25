@@ -57,7 +57,7 @@ $movies_model->paginate($page, $limit);
 $movies = $movies_model->fetch();
 
 //A helper class created to render pagination buttons.
-$pagination = new ViewPaginator($page, $total_count, $limit);
+$pagination = new ViewPaginator($page, $total_count, $limit, ROOT_URL);
 $pagination->setAddedQueryParamters(['sort_field' => $sort_by, 'sort_order' => $sort_order, 'genre' => $genre, 'lang' => $lang]);
 
 //load the html

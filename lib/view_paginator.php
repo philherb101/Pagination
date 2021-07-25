@@ -46,6 +46,7 @@ class ViewPaginator
      */
     private $added_query_string;
 
+    private $page_url;
 
     /**
      * Hmmm. what can I write here.
@@ -54,12 +55,13 @@ class ViewPaginator
      * @param int $total_count
      * @param int $per_page_count
      */
-    public function __construct($page_number, $total_count, $per_page_count)
+    public function __construct($page_number, $total_count, $per_page_count, $page_url)
     {
         # code...
         $this->total_count = $total_count;
         $this->page_number = $page_number;
         $this->per_page_count = $per_page_count;
+        $this->page_url = $page_url;
     }
 
     /**
@@ -148,7 +150,7 @@ class ViewPaginator
         $next_page = $this->getNextPageNumber();
         $previous_page = $this->getPreviousPageNumber();
 
-        $url = "/movies/index.php?";
+        $url = ROOT_URL . "?";
         $added_query_string = $this->added_query_string;
 
         if ($last_page > 1) {

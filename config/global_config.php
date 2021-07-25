@@ -1,4 +1,5 @@
 <?php
+const ROOT_URL = "http://localhost/movies_app";
 const DB_USER = "root";
 const DB_PASSWORD = "root";
 const DB_NAME = "movies_test";
